@@ -2,13 +2,10 @@
 
 version: "3"
 
-vars:
-  GREETING: Hello, World!
-
 tasks:
   default:
     cmds:
-      - echo "{{.GREETING}}"
+      - echo "Command not found"
     silent: true
 
   clean:all:
@@ -19,12 +16,12 @@ tasks:
     deps: [clean:all]
     cmds:
       - task: build_base_img
+      - task: build_dotnet8_sdk
+      - task: build_aspnet8_runtime
+      - task: build_dotnet8_runtime
+      - task: build_golang
       - task: build_jdk_11
       - task: build_jre_11
-      - task: build_jdk_17
-      - task: build_jre_17
-      - task: build_jdk_21
-      - task: build_jre_21
       - task: build_python3
 
   build_base_img:
@@ -36,6 +33,49 @@ tasks:
     cmds:
       - podman buildx build --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:p10-$image_version
       - podman push $repo_url/$image_name:p10-$image_version
+
+  build_dotnet8_sdk:
+    dir: dotnet-sdk
+    env:
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10-dotnet-sdk
+      dotnet_version: "8.0"
+    cmds:
+      - podman buildx build --build-arg REPO_URL=$repo_url --build-arg DOTNET_CORE_VERSION=$dotnet_version --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:$dotnet_version-$image_version
+      - podman push $repo_url/$image_name:$dotnet_version-$image_version
+
+  build_aspnet8_runtime:
+    dir: aspnet-runtime
+    env:
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10-aspnet-runtime
+      dotnet_version: "8.0"
+    cmds:
+      - podman buildx build --build-arg REPO_URL=$repo_url --build-arg DOTNET_VERSION=$dotnet_version --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:$dotnet_version-$image_version
+      - podman push $repo_url/$image_name:$dotnet_version-$image_version
+
+  build_dotnet8_runtime:
+    dir: dotnet-runtime
+    env:
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10-dotnet-runtime
+      dotnet_version: "8.0"
+    cmds:
+      - podman buildx build --build-arg REPO_URL=$repo_url --build-arg DOTNET_VERSION=$dotnet_version --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:$dotnet_version-$image_version
+      - podman push $repo_url/$image_name:$dotnet_version-$image_version
+
+  build_golang:
+    dir: golang
+    env:
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10-golang
+    cmds:
+      - podman buildx build --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name:$image_version
+      - podman push $repo_url/$image_name:$image_version
 
   build_jdk_11:
     dir: java
@@ -53,54 +93,6 @@ tasks:
     dir: java
     env:
       java_version: 11
-      java_type: jre
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10
-    cmds:
-      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
-      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
-
-  build_jdk_17:
-    dir: java
-    env:
-      java_version: 17
-      java_type: jdk
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10
-    cmds:
-      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
-      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
-
-  build_jre_17:
-    dir: java
-    env:
-      java_version: 17
-      java_type: jre
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10
-    cmds:
-      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
-      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
-
-  build_jdk_21:
-    dir: java
-    env:
-      java_version: 21
-      java_type: jdk
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10
-    cmds:
-      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
-      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
-
-  build_jre_21:
-    dir: java
-    env:
-      java_version: 21
       java_type: jre
       image_version: 1.0.0
       repo_url: pm-srv.lan:3000/padremortius

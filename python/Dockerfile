@@ -7,6 +7,6 @@ LABEL \
     org.company_name.compiler="Python" \
     org.opencontainers.image.description="Image for build and run Company Name's python applications"
 
-RUN apt-get update --enable-upgrade && \
+RUN apt-get update && \
     apt-get install -y python3-module-pip && \
     rm -f /var/cache/apt/archives/*.rpm /var/cache/apt/*.bin /var/lib/apt/lists/*.*
