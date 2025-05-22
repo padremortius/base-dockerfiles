@@ -1,0 +1,5 @@
+# ftp.yandex.ru (Yandex LLC, Moscow)
+
+# ALT Platform 10 from Yandex
+rpm [p10] http://mirror.yandex.ru/altlinux p10/branch/aarch64 classic
+rpm [p10] http://mirror.yandex.ru/altlinux p10/branch/noarch classic

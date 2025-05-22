@@ -1,0 +1,120 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  clean:all:
+    cmds:
+      - podman system prune -af
+
+  build:all:
+    deps: [clean:all]
+    cmds:
+      - task: build_base_img
+      - task: build_jdk_11
+      - task: build_jre_11
+      - task: build_jdk_17
+      - task: build_jre_17
+      - task: build_jdk_21
+      - task: build_jre_21
+      - task: build_python3
+
+  build_base_img:
+    dir: _base
+    env:
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: devops-altlinux
+    cmds:
+      - podman buildx build --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:p10-$image_version
+      - podman push $repo_url/$image_name:p10-$image_version
+
+  build_jdk_11:
+    dir: java
+    env:
+      java_version: 11
+      java_type: jdk
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
+      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+
+  build_jre_11:
+    dir: java
+    env:
+      java_version: 11
+      java_type: jre
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
+      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+
+  build_jdk_17:
+    dir: java
+    env:
+      java_version: 17
+      java_type: jdk
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
+      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+
+  build_jre_17:
+    dir: java
+    env:
+      java_version: 17
+      java_type: jre
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
+      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+
+  build_jdk_21:
+    dir: java
+    env:
+      java_version: 21
+      java_type: jdk
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
+      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+
+  build_jre_21:
+    dir: java
+    env:
+      java_version: 21
+      java_type: jre
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
+      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+
+  build_python3:
+    dir: python
+    env:
+      image_version: 1.0.0
+      repo_url: pm-srv.lan:3000/padremortius
+      image_name: altlinux-p10
+    cmds:
+      - podman buildx build --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-python:3-$image_version
+      - podman push $repo_url/$image_name-python:3-$image_version
