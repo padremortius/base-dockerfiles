@@ -2,111 +2,122 @@
 
 version: "3"
 
+env:
+  repo_url: pm-srv.lan:3000/projects
+  base_image: pm-srv.lan:3000/projects/devops-altlinux-p10:1.0.1
+  base_image_name: altlinux-p10
+
+vars:
+  oci_tool:
+    sh: set +e; tools=("docker" "podman"); for item in "${tools[@]}"; do resp="$(which -as $item 2>&1)"; if [[ $? -eq 0 ]]; then echo $item; fi; done
+
+  docker:
+    sh: |
+      if [ "{{ .oci_tool }}" == "podman" ]; then
+        echo "-f Dockerfile"
+      else
+        echo "."
+      fi
+
+  build_time:
+    sh: date -u +'%Y-%m-%dT%H:%M:%SZ'
+
+  build_time_params: "--build-arg BUILD_TIME={{ .build_time }}"
+
 tasks:
   default:
     cmds:
-      - echo "Command not found"
-    silent: true
+      - defer: echo '{{if .EXIT_CODE}}Failed with {{.EXIT_CODE}}!{{else}}Success!{{end}}'
+      - exit 0
 
   clean:all:
     cmds:
-      - podman system prune -af
+      - "{{ .oci_tool }} system prune -af"
 
   build:all:
     deps: [clean:all]
     cmds:
       - task: build_base_img
-      - task: build_dotnet8_sdk
-      - task: build_aspnet8_runtime
-      - task: build_dotnet8_runtime
+      - task: build_dotnet:8.0:dotnet-sdk
+      - task: build_dotnet:8.0:dotnet
+      - task: build_dotnet:8.0:aspnet
+      - task: build_dotnet:7.0:dotnet-sdk
+      - task: build_dotnet:7.0:dotnet
+      - task: build_dotnet:7.0:aspnet
       - task: build_golang
-      - task: build_jdk_11
-      - task: build_jre_11
+      - task: build_java:11:jdk
+      - task: build_java:11:jre
+      - task: build_java:17:jdk
+      - task: build_java:17:jre
       - task: build_python3
 
   build_base_img:
     dir: _base
-    env:
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: devops-altlinux
+    vars:
+      image_name: devops-altlinux-p10
+      image_version: "1.0.1"
+      image_url:
+        sh: echo "$repo_url/${image_name}:${image_version}"
+      build_params:
+        sh: echo "--build-arg VER=$image_version"
     cmds:
-      - podman buildx build --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:p10-$image_version
-      - podman push $repo_url/$image_name:p10-$image_version
+      - "{{ .oci_tool }} buildx build {{ .build_params }} {{ .build_time_params }} -t {{ .image_url }} {{ .docker }}"
+      - "{{ .oci_tool }} push {{ .image_url }}"
+    silent: true
 
-  build_dotnet8_sdk:
-    dir: dotnet-sdk
-    env:
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10-dotnet-sdk
-      dotnet_version: "8.0"
+  build_dotnet:*:*:
+    dir: dotnet
+    vars:
+      image_version: 1.0.1
+      image_name: altlinux-p10
+      dotnet_version: "{{index .MATCH 0}}"
+      dotnet_type: "{{index .MATCH 1}}"
+      image_url:
+        sh: echo "{{ .repo_url }}/${image_name}-${dotnet_type}:${dotnet_version}-${image_version}"
+      build_params:
+        sh: echo "--build-arg BASE_IMAGE={{ .base_image }} --build-arg DOTNET_VERSION=$dotnet_version --build-arg DOTNET_TYPE=$dotnet_type --build-arg VER=$image_version"
     cmds:
-      - podman buildx build --build-arg REPO_URL=$repo_url --build-arg DOTNET_CORE_VERSION=$dotnet_version --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:$dotnet_version-$image_version
-      - podman push $repo_url/$image_name:$dotnet_version-$image_version
-
-  build_aspnet8_runtime:
-    dir: aspnet-runtime
-    env:
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10-aspnet-runtime
-      dotnet_version: "8.0"
-    cmds:
-      - podman buildx build --build-arg REPO_URL=$repo_url --build-arg DOTNET_VERSION=$dotnet_version --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:$dotnet_version-$image_version
-      - podman push $repo_url/$image_name:$dotnet_version-$image_version
-
-  build_dotnet8_runtime:
-    dir: dotnet-runtime
-    env:
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10-dotnet-runtime
-      dotnet_version: "8.0"
-    cmds:
-      - podman buildx build --build-arg REPO_URL=$repo_url --build-arg DOTNET_VERSION=$dotnet_version --build-arg VER=$image_version -f Dockerfile -t $repo_url/$image_name:$dotnet_version-$image_version
-      - podman push $repo_url/$image_name:$dotnet_version-$image_version
+      - "{{ .oci_tool }} buildx build {{ .build_params }} {{ .build_time_params }} -t {{ .image_url }} {{ .docker }}"
+      - "{{ .oci_tool }} push {{ .image_url }}"
 
   build_golang:
     dir: golang
-    env:
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
+    vars:
+      image_version: 1.0.1
       image_name: altlinux-p10-golang
+      golang_version: "1.23"
+      image_url:
+        sh: echo "{{ .repo_url }}/${image_name}:$image_version"
+      build_params:
+        sh: echo "--build-arg VER=$image_version --build-arg BASE_IMAGE={{ .base_image }} --build-arg GOLANG_VERSION=$golang_version"
     cmds:
-      - podman buildx build --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name:$image_version
-      - podman push $repo_url/$image_name:$image_version
+      - "{{ .oci_tool }} buildx build {{ .build_params }} {{ .build_time_params }} -t {{ .image_url }} {{ .docker }}"
+      - "{{ .oci_tool }} push {{ .image_url }}"
 
-  build_jdk_11:
+  build_java:*:*:
     dir: java
-    env:
-      java_version: 11
-      java_type: jdk
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
+    vars:
+      java_version: "{{index .MATCH 0}}"
+      java_type: "{{index .MATCH 1}}"
+      image_version: 1.0.1
       image_name: altlinux-p10
+      image_url:
+        sh: echo "{{ .repo_url }}/$image_name-$java_type:$java_version-$image_version"
+      build_params:
+        sh: echo "--build-arg VER=$image_version --build-arg BASE_IMAGE={{ .base_image }} --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type"
     cmds:
-      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
-      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
-
-  build_jre_11:
-    dir: java
-    env:
-      java_version: 11
-      java_type: jre
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10
-    cmds:
-      - podman buildx build --build-arg JAVA_VERSION=$java_version --build-arg JAVA_TYPE=$java_type --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-$java_type:$java_version-$image_version
-      - podman push $repo_url/$image_name-$java_type:$java_version-$image_version
+      - "{{ .oci_tool }} buildx build {{ .build_params }} {{ .build_time_params }} -t {{ .image_url }} {{ .docker }}"
+      - "{{ .oci_tool }} push {{ .image_url }}"
 
   build_python3:
     dir: python
-    env:
-      image_version: 1.0.0
-      repo_url: pm-srv.lan:3000/padremortius
-      image_name: altlinux-p10
+    vars:
+      image_version: 1.0.1
+      image_name: altlinux-p10-python3
+      image_url:
+        sh: echo "{{ .repo_url }}/$image_name:$image_version"
+      build_params:
+        sh: echo "--build-arg VER=$image_version --build-arg BASE_IMAGE={{ .base_image }}"
     cmds:
-      - podman buildx build --build-arg VER=$image_version --build-arg REPO_URL=$repo_url -f Dockerfile -t $repo_url/$image_name-python:3-$image_version
-      - podman push $repo_url/$image_name-python:3-$image_version
+      - "{{ .oci_tool }}  buildx build  {{ .build_params }} {{ .build_time_params }} -t {{ .image_url }} {{ .docker }}"
+      - "{{ .oci_tool }} push {{ .image_url }}"

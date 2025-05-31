@@ -1,13 +1,17 @@
-ARG REPO_URL
+ARG BASE_IMAGE='devops-altlinux:p10-1.0.0'
+ARG PLATFORM="linux/arm64"
 
-FROM $REPO_URL/devops-altlinux:p10-1.0.0
+FROM --platform=${PLATFORM} ${BASE_IMAGE}
 
 ARG GOLANG_VERSION
+ARG BUILD_TIME
+ARG VER
 
 LABEL \
     org.company_name.compiler="Golang" \
-    org.company_name.compiler.version="1.23" \
-    org.opencontainers.image.description="Builder image for Company Name's Golang applications"
+    org.company_name.compiler.version="${GOLANG_VERSION}" \
+    org.opencontainers.image.created=${BUILD_TIME} \
+    VERSION=${VER}
 
 RUN apt-get update && \
     apt-get install -y golang golang-tools && \

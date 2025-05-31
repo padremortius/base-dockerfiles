@@ -1,13 +1,17 @@
-FROM registry.altlinux.org/alt/alt:p10
+ARG PLATFORM="linux/arm64"
+
+FROM --platform=${PLATFORM} registry.altlinux.org/alt/alt:p10
 
 ARG VER
+ARG BUILD_TIME
 
 LABEL \
     OS="Alt Linux p10" \
     COMPANY="Company Name" \
     VERSION=$VER \
     MAINTAINER="padremortius" \
-    org.opencontainers.image.description="Base image for Company Name"
+    org.opencontainers.image.description="Base image for Company Name" \
+    org.opencontainers.image.created=${BUILD_TIME}
 
 COPY certs/*.crt /etc/pki/ca-trust/source/anchors/
 

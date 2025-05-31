@@ -1,11 +1,16 @@
-ARG REPO_URL
+ARG BASE_IMAGE='devops-altlinux:p10-1.0.0'
+ARG PLATFORM="linux/arm64"
 
-FROM $REPO_URL/devops-altlinux:p10-1.0.0
+FROM --platform=${PLATFORM} ${BASE_IMAGE}
+
+ARG BUILD_TIME
+ARG VER
 
 LABEL \
     org.company_name.builder="Pip" \
     org.company_name.compiler="Python" \
-    org.opencontainers.image.description="Image for build and run Company Name's python applications"
+    org.opencontainers.image.created=${BUILD_TIME} \
+    VERSION=${VER}
 
 RUN apt-get update && \
     apt-get install -y python3-module-pip && \
